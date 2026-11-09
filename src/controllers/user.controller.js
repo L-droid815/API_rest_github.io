@@ -24,9 +24,9 @@
 // Datos de prueba en memoria para el ejemplo de referencia
 let users = [
 
-  { id: 1, name: 'Juan Pérez', email: 'juan@gmail.com' },
+  { id: 1, producto: 'Computadora Acer', precio: "1500$", unidades: 2 },
 
-  { id: 2, name: 'María Gómez', email: 'maria@gmail.com' },
+  { id: 2, producto: 'Computadora Asus', precio: "1200$", unidades: 10 },
 ];
 
 /**
@@ -77,73 +77,75 @@ export const getUserById = async (req, res) => {
 };
 
 /**
- * 3. CREATE - Crear un nuevo usuario
+ * 3. CREATE - Crear un nuevo usuario / producto
  * POST /api/users
- * Body: { "name": "...", "email": "..." }
  */
 export const createUser = async (req, res) => {
-  try {
-    const { name, email } = req.body;
+    try {
+        const { producto, precio, unidades } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Los campos "name" y "email" son obligatorios'
-      });
+        // Validamos que los campos obligatorios estén presentes
+        if (!producto || !precio || unidades === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'Los campos "producto", "precio" y "unidades" son obligatorios'
+            });
+        }
+
+        const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
+        const newUser = { id: nextId, producto, precio, unidades };
+        users.push(newUser);
+
+        return res.status(201).json({
+            success: true,
+            message: 'Usuario creado exitosamente',
+            data: newUser
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
-
-    const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
-    const newUser = { id: nextId, name, email };
-    users.push(newUser);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Usuario creado exitosamente',
-      data: newUser
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
 };
 
 /**
- * 4. UPDATE - Actualizar un usuario existente
+ * 4. UPDATE - Actualizar un usuario / producto existente
  * PUT /api/users/:id
- * Body: { "name"?: "...", "email"?: "..." }
  */
 export const updateUser = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const { name, email } = req.body;
+    try {
+        const id = parseInt(req.params.id, 10);
+        const { producto, precio, unidades } = req.body;
 
-    const index = users.findIndex((u) => u.id === id);
-    if (index === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Usuario no encontrado para actualizar'
-      });
+        const index = users.findIndex((u) => u.id === id);
+        
+        if (index === -1) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado para actualizar'
+            });
+        }
+
+        // Actualizamos los campos que vengan en la petición
+        users[index] = {
+            ...users[index],
+            ...(producto && { producto }),
+            ...(precio && { precio }),
+            ...(unidades !== undefined && { unidades })
+        };
+
+        return res.status(200).json({
+            success: true,
+            message: 'Usuario actualizado exitosamente',
+            data: users[index]
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
-
-    users[index] = {
-      ...users[index],
-      ...(name && { name }),
-      ...(email && { email })
-    };
-
-    return res.status(200).json({
-      success: true,
-      message: 'Usuario actualizado exitosamente',
-      data: users[index]
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
 };
 
 /**
